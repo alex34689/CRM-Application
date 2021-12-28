@@ -1,4 +1,4 @@
-package com.edu.institute;
+package com.crm.institute;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
