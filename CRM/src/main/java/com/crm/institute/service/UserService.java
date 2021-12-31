@@ -5,4 +5,6 @@ import com.crm.institute.enttity.UserF;
 public interface UserService {
 
 	public Iterable<UserF> getAllUsers();
+
+	public UserF createUser(UserF user) throws Exception;
 }
