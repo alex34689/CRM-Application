@@ -1,5 +1,6 @@
 package com.crm.institute.service;
 
+import com.crm.institute.dto.ChangePassword;
 import com.crm.institute.enttity.UserF;
 
 public interface UserService {
@@ -13,4 +14,6 @@ public interface UserService {
 	public UserF updateUser(UserF user) throws Exception;
 
 	public void deleteUser(Long id) throws Exception;
+	
+	public UserF changePassword(ChangePassword form) throws Exception;
 }
