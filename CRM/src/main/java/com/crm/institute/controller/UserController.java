@@ -21,15 +21,15 @@ public class UserController {
 
 	@Autowired
 	UserService userService;
-	
+
 	@Autowired
 	RoleRepository roleRepository;
-	
+
 	@GetMapping("/")
 	public String index() {
 		return "index";
 	}
-	
+
 	@GetMapping("/userForm")
 	public String getUserForm(Model model) {
 		model.addAttribute("userForm", new UserF());
@@ -38,7 +38,7 @@ public class UserController {
 		model.addAttribute("listTab", "active");
 		return "user-form/user-view";
 	}
-	
+
 	@PostMapping("/userForm")
 	public String createUser(@Valid @ModelAttribute("userForm") UserF user, BindingResult result, ModelMap model) {
 		if (result.hasErrors()) {
@@ -63,22 +63,23 @@ public class UserController {
 		model.addAttribute("roles", roleRepository.findAll());
 		return "user-form/user-view";
 	}
-	
+
 	@GetMapping("/editUser/{id}")
-	public String getEditUserForm(Model model, @PathVariable(name="id") Long id) throws Exception{
+	public String getEditUserForm(Model model, @PathVariable(name = "id") Long id) throws Exception {
 		UserF userToEdit = userService.getUserById(id);
-		
+
 		model.addAttribute("userForm", userToEdit);
 		model.addAttribute("userList", userService.getAllUsers());
 		model.addAttribute("roles", roleRepository.findAll());
-		model.addAttribute("formTab", "active");  //Activa el tab del formulario
+		model.addAttribute("formTab", "active"); // Activa el tab del formulario
 		model.addAttribute("editMode", "true");
-				
+
 		return "user-form/user-view";
 	}
-	
+
 	@PostMapping("editUser")
-	public String postEditUserForm(@Valid @ModelAttribute("userForm")UserF user, BindingResult result, ModelMap model) {
+	public String postEditUserForm(@Valid @ModelAttribute("userForm") UserF user, BindingResult result,
+			ModelMap model) {
 		if (result.hasErrors()) {
 			model.addAttribute("userForm", user);
 			model.addAttribute("formTab", "active");
@@ -103,9 +104,20 @@ public class UserController {
 		model.addAttribute("roles", roleRepository.findAll());
 		return "user-form/user-view";
 	}
-	
+
 	@GetMapping("/userForm/cancel")
 	public String cancelEditUser(ModelMap model) {
 		return "redirect:/userForm";
 	}
+
+	@GetMapping("/deleteUser/{id}")
+	public String deleteUser(Model model, @PathVariable(name = "id") Long id) {
+		try {
+			userService.deleteUser(id);
+		} catch (Exception e) {
+			model.addAttribute("listErrorMessage", e.getMessage());
+		}
+		return getUserForm(model);
+	}
+
 }
