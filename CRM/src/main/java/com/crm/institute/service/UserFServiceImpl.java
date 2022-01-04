@@ -3,6 +3,10 @@ package com.crm.institute.service;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.crm.institute.dto.ChangePassword;
@@ -15,6 +19,9 @@ public class UserFServiceImpl implements UserService {
 	@Autowired
 	UserRepository repository;
 
+	@Autowired
+	BCryptPasswordEncoder bCryptPasswordEncoder;
+	
 	@Override
 	public Iterable<UserF> getAllUsers() {
 		return repository.findAll();
@@ -41,6 +48,10 @@ public class UserFServiceImpl implements UserService {
 	@Override
 	public UserF createUser(UserF user) throws Exception {
 		if (checkUsernameAvailable(user) && checkPassworValid(user)) {
+			String encodePassword = bCryptPasswordEncoder.encode(user.getPassword());
+			String encodeConfirmPassword = bCryptPasswordEncoder.encode(user.getConfirmPassword());
+			user.setPassword(encodePassword);
+			user.setConfirmPassword(encodeConfirmPassword);
 			user = repository.save(user);
 		}
 		return user;
@@ -74,6 +85,7 @@ public class UserFServiceImpl implements UserService {
 	}
 
 	@Override
+	@PreAuthorize("hasAnyRole('ROLE_ADMIN')")
 	public void deleteUser(Long id) throws Exception {
 		UserF user = getUserById(id);
 		repository.delete(user);
@@ -83,7 +95,7 @@ public class UserFServiceImpl implements UserService {
 	@Override
 	public UserF changePassword(ChangePassword form) throws Exception {
 		UserF user = getUserById(form.getId());
-		if (!user.getPassword().equals(form.getCurrentPassword())) {
+		if (!isLoggedUserADMIN() && !user.getPassword().equals(form.getCurrentPassword())) {
 			throw new Exception("Current Password invalido.");
 		}
 		if (user.getPassword().equals(form.getNewPassword())) {
@@ -92,10 +104,25 @@ public class UserFServiceImpl implements UserService {
 		if (!form.getNewPassword().equals(form.getConfirmPassword())) {
 			throw new Exception("Nuevo Password y Current Password no coinciden");
 		}
-		user.setPassword(form.getNewPassword());
-		user.setConfirmPassword(form.getConfirmPassword());
+		
+		String encodePassword = bCryptPasswordEncoder.encode(form.getNewPassword());
+		String encodeConfirmPassword = bCryptPasswordEncoder.encode(form.getConfirmPassword());
+		user.setPassword(encodePassword);
+		user.setConfirmPassword(encodeConfirmPassword);
 		repository.save(user);
 		return null;
+	}
+	
+	public boolean isLoggedUserADMIN() {
+		Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+		UserDetails loggedUser = null;		
+		if(principal instanceof UserDetails) {
+			loggedUser = (UserDetails) principal;
+			
+			loggedUser.getAuthorities().stream().filter(x -> "ADMIN".equals(x.getAuthority())).findFirst().orElse(null);			
+			
+		}
+		return loggedUser != null ? true : false;
 	}
 
 }
