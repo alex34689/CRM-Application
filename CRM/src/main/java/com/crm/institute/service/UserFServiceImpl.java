@@ -97,18 +97,19 @@ public class UserFServiceImpl implements UserService {
 	@Override
 	public UserF changePassword(ChangePassword form) throws Exception {
 		UserF user = getUserById(form.getId());
-		if (!isLoggedUserADMIN() && !user.getPassword().equals(form.getCurrentPassword())) {
+		String encodePassword = bCryptPasswordEncoder.encode(form.getNewPassword());
+		String encodeConfirmPassword = bCryptPasswordEncoder.encode(form.getConfirmPassword());
+		
+		if (!isLoggedUserADMIN() && !bCryptPasswordEncoder.matches(form.getNewPassword(), encodePassword)){// user.getPassword().equals(encodePassword)) {
 			throw new Exception("Current Password invalido.");
 		}
 		if (user.getPassword().equals(form.getNewPassword())) {
 			throw new Exception("Nuevo password debe de ser diferente al actual");
 		}
 		if (!form.getNewPassword().equals(form.getConfirmPassword())) {
-			throw new Exception("Nuevo Password y Current Password no coinciden");
+			throw new Exception("Nuevo Password y Confirm Password no coinciden");
 		}
 
-		String encodePassword = bCryptPasswordEncoder.encode(form.getNewPassword());
-		String encodeConfirmPassword = bCryptPasswordEncoder.encode(form.getConfirmPassword());
 		user.setPassword(encodePassword);
 		user.setConfirmPassword(encodeConfirmPassword);
 		repository.save(user);

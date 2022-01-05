@@ -29,13 +29,16 @@ import com.crm.institute.service.UserService;
 
 @Controller
 public class UserController {
+	
+	private final String TAB_FORM = "formTab";
+	private final String TAB_LIST = "listTab";
 
 	@Autowired
 	UserService userService;
 
 	@Autowired
 	RoleRepository roleRepository;
-
+	
 	@GetMapping({"/","/login"})
 	public String index() {
 		return "index";
@@ -76,44 +79,40 @@ public class UserController {
 		return "index";
 	}
 	
+	public void baseAttributerForUserForm(Model model, UserF user, String activeTab) {
+		model.addAttribute("userForm", user);
+		model.addAttribute("userList", userService.getAllUsers());
+		model.addAttribute("roles", roleRepository.findAll());
+		model.addAttribute(activeTab, "active");
+	}
+	
 	
 	@GetMapping("/userForm")
 	public String getUserForm(Model model) {
-		model.addAttribute("userForm", new UserF());
-		model.addAttribute("userList", userService.getAllUsers());
-		model.addAttribute("roles", roleRepository.findAll());
-		model.addAttribute("listTab", "active");
+		baseAttributerForUserForm(model, new UserF(), TAB_LIST);
 		return "user-form/user-view";
 	}
 
 	@PostMapping("/userForm")
-	public String createUser(@Valid @ModelAttribute("userForm") UserF user, BindingResult result, ModelMap model) {
+	public String createUser(@Valid @ModelAttribute("userForm") UserF user, BindingResult result, Model model) {
 		if (result.hasErrors()) {
-			model.addAttribute("userForm", user);
-			model.addAttribute("formTab", "active");
+			baseAttributerForUserForm(model, user, TAB_FORM);
 		} 
 		else {
 			try {
 				userService.createUser(user);
-				model.addAttribute("userForm", new UserF());
-				model.addAttribute("listTab", "active");
+				baseAttributerForUserForm(model, user, TAB_LIST);
+				
 			} catch (CustomeFieldValidationException cfve) {
 				result.rejectValue(cfve.getFieldName(), null, cfve.getMessage());						
-				model.addAttribute("userForm", user);
-				model.addAttribute("formTab", "active");
-				model.addAttribute("userList", userService.getAllUsers());
-				model.addAttribute("roles", roleRepository.findAll());				
+				baseAttributerForUserForm(model, user, TAB_FORM);
+				
 			} catch (Exception e) {
 				model.addAttribute("formErrorMessage", e.getMessage());
-				model.addAttribute("userForm", user);
-				model.addAttribute("formTab", "active");
-				model.addAttribute("userList", userService.getAllUsers());
-				model.addAttribute("roles", roleRepository.findAll());
+				baseAttributerForUserForm(model, user, TAB_FORM);
 				
 			}
 		}
-		model.addAttribute("userList", userService.getAllUsers());
-		model.addAttribute("roles", roleRepository.findAll());
 		return "user-form/user-view";
 	}
 
@@ -121,10 +120,7 @@ public class UserController {
 	public String getEditUserForm(Model model, @PathVariable(name = "id") Long id) throws Exception {
 		UserF userToEdit = userService.getUserById(id);
 
-		model.addAttribute("userForm", userToEdit);
-		model.addAttribute("userList", userService.getAllUsers());
-		model.addAttribute("roles", roleRepository.findAll());
-		model.addAttribute("formTab", "active"); // Activa el tab del formulario
+		baseAttributerForUserForm(model, userToEdit, TAB_FORM);
 		model.addAttribute("editMode", "true");
 		model.addAttribute("passwordForm", new ChangePassword(id));
 
@@ -133,31 +129,25 @@ public class UserController {
 
 	@PostMapping("editUser")
 	public String postEditUserForm(@Valid @ModelAttribute("userForm") UserF user, BindingResult result,
-			ModelMap model) {
+			Model model) {
 		if (result.hasErrors()) {
-			model.addAttribute("userForm", user);
-			model.addAttribute("formTab", "active");
+			baseAttributerForUserForm(model, user, TAB_FORM);
 			model.addAttribute("editMode", "true");
 			model.addAttribute("passwordForm", new ChangePassword(user.getId()));
-		} // falta realizar validaciones en email, contraseña usuario
+		} 
 		else {
 			try {
 				userService.updateUser(user);
-				model.addAttribute("userForm", new UserF());
-				model.addAttribute("listTab", "active");
+				baseAttributerForUserForm(model, user, TAB_LIST);
+				
 			} catch (Exception e) {
 				model.addAttribute("formErrorMessage", e.getMessage());
-				model.addAttribute("userForm", user);
-				model.addAttribute("formTab", "active");
-				model.addAttribute("userList", userService.getAllUsers());
-				model.addAttribute("roles", roleRepository.findAll());
+				baseAttributerForUserForm(model, user, TAB_FORM);
 				model.addAttribute("editMode", "true");
 				model.addAttribute("passwordForm", new ChangePassword(user.getId()));
 				return "user-form/user-view";
 			}
-		}
-		model.addAttribute("userList", userService.getAllUsers());
-		model.addAttribute("roles", roleRepository.findAll());
+		}	
 		return "user-form/user-view";
 	}
 
