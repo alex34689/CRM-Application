@@ -7,5 +7,6 @@ import com.crm.institute.enttity.Role;
 
 @Repository
 public interface RoleRepository extends CrudRepository<Role, Long> {
-
+	
+	public Role findByName(String name);
 }

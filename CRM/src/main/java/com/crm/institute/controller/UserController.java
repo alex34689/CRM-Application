@@ -1,5 +1,7 @@
 package com.crm.institute.controller;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import javax.validation.Valid;
@@ -20,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import com.crm.institute.Exception.CustomeFieldValidationException;
 import com.crm.institute.Exception.UsernameOrIdNotFound;
 import com.crm.institute.dto.ChangePassword;
+import com.crm.institute.enttity.Role;
 import com.crm.institute.enttity.UserF;
 import com.crm.institute.repository.RoleRepository;
 import com.crm.institute.service.UserService;
@@ -38,6 +41,42 @@ public class UserController {
 		return "index";
 	}
 
+	@GetMapping("/signup")
+	public String signup(Model model) {
+		Role userRole = roleRepository.findByName("USER");
+		List<Role> roles = Arrays.asList(userRole);
+		model.addAttribute("userForm", new UserF());
+		model.addAttribute("roles", roles);
+		model.addAttribute("signup", true);
+		return "user-form/user-signup";
+	}
+	
+	@PostMapping("signup")
+	public String postSignup(@Valid @ModelAttribute("userForm") UserF user, BindingResult result, ModelMap model) {
+		Role userRole = roleRepository.findByName("USER");
+		List<Role> roles = Arrays.asList(userRole);
+		model.addAttribute("userForm", user);
+		model.addAttribute("roles", roles);
+		model.addAttribute("signup", true);
+		
+		if (result.hasErrors()) {
+			return "user-form/user-signup";
+		} else {
+			try {
+				userService.createUser(user);
+			} catch (CustomeFieldValidationException cfve) {
+				result.rejectValue(cfve.getFieldName(), null, cfve.getMessage());
+				return "user-form/user-signup";
+
+			} catch (Exception e) {
+				model.addAttribute("formErrorMessage", e.getMessage());
+				return "user-form/user-signup";
+			}
+		}
+		return "index";
+	}
+	
+	
 	@GetMapping("/userForm")
 	public String getUserForm(Model model) {
 		model.addAttribute("userForm", new UserF());
@@ -52,7 +91,7 @@ public class UserController {
 		if (result.hasErrors()) {
 			model.addAttribute("userForm", user);
 			model.addAttribute("formTab", "active");
-		} // falta realizar validaciones en email, contraseña usuario
+		} 
 		else {
 			try {
 				userService.createUser(user);
