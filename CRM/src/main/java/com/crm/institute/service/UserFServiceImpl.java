@@ -9,6 +9,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.crm.institute.Exception.UsernameOrIdNotFound;
 import com.crm.institute.dto.ChangePassword;
 import com.crm.institute.enttity.UserF;
 import com.crm.institute.repository.UserRepository;
@@ -21,7 +22,7 @@ public class UserFServiceImpl implements UserService {
 
 	@Autowired
 	BCryptPasswordEncoder bCryptPasswordEncoder;
-	
+
 	@Override
 	public Iterable<UserF> getAllUsers() {
 		return repository.findAll();
@@ -58,8 +59,8 @@ public class UserFServiceImpl implements UserService {
 	}
 
 	@Override
-	public UserF getUserById(Long id) throws Exception {
-		return repository.findById(id).orElseThrow(() -> new Exception("El usuario no existe"));
+	public UserF getUserById(Long id) throws UsernameOrIdNotFound {
+		return repository.findById(id).orElseThrow(() -> new UsernameOrIdNotFound("El Id del usuario no existe"));
 	}
 
 	@Override
@@ -86,7 +87,7 @@ public class UserFServiceImpl implements UserService {
 
 	@Override
 	@PreAuthorize("hasAnyRole('ROLE_ADMIN')")
-	public void deleteUser(Long id) throws Exception {
+	public void deleteUser(Long id) throws UsernameOrIdNotFound {
 		UserF user = getUserById(id);
 		repository.delete(user);
 
@@ -104,7 +105,7 @@ public class UserFServiceImpl implements UserService {
 		if (!form.getNewPassword().equals(form.getConfirmPassword())) {
 			throw new Exception("Nuevo Password y Current Password no coinciden");
 		}
-		
+
 		String encodePassword = bCryptPasswordEncoder.encode(form.getNewPassword());
 		String encodeConfirmPassword = bCryptPasswordEncoder.encode(form.getConfirmPassword());
 		user.setPassword(encodePassword);
@@ -112,15 +113,15 @@ public class UserFServiceImpl implements UserService {
 		repository.save(user);
 		return null;
 	}
-	
+
 	public boolean isLoggedUserADMIN() {
 		Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-		UserDetails loggedUser = null;		
-		if(principal instanceof UserDetails) {
+		UserDetails loggedUser = null;
+		if (principal instanceof UserDetails) {
 			loggedUser = (UserDetails) principal;
-			
-			loggedUser.getAuthorities().stream().filter(x -> "ADMIN".equals(x.getAuthority())).findFirst().orElse(null);			
-			
+
+			loggedUser.getAuthorities().stream().filter(x -> "ADMIN".equals(x.getAuthority())).findFirst().orElse(null);
+
 		}
 		return loggedUser != null ? true : false;
 	}
